@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <style>
+      /* Variables CSS génériques */
+      :root { 
+        --primary-color: #045973; 
+        --accent-color: #F0861E;
+        --bg-color: #f4f6f8; 
+      }
+      
+      body { font-family: 'Source Sans Pro', sans-serif; background: var(--bg-color); text-align: center; padding: 40px; }
+      .container { background: white; max-width: 600px; margin: 0 auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+      h1 { color: var(--primary-color); font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
+      
+      /* Image Logo générique */
+      img { max-width: 200px; margin-bottom: 20px; height: auto; }
+      
+      .btn-group { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+      
+      /* Bouton Principal (Plein) */
+      .btn { background: var(--primary-color); color: white; border: none; padding: 15px 30px; font-size: 16px; font-weight: 600; border-radius: 4px; cursor: pointer; width: 100%; transition: opacity 0.3s; }
+      .btn:hover { opacity: 0.9; }
+      .btn:disabled { background: #ccc; cursor: not-allowed; }
+
+      /* Bouton Secondaire (Contour) */
+      .btn-outline { background: white; color: var(--primary-color); border: 2px solid var(--primary-color); padding: 15px 30px; font-size: 16px; font-weight: 600; border-radius: 4px; cursor: pointer; width: 100%; transition: all 0.3s; }
+      .btn-outline:hover { background: #f0f8fa; }
+      .btn-outline:disabled { border-color: #ccc; color: #ccc; cursor: not-allowed; }
+
+      .rgpd-box { background-color: #e6f2f5; border-left: 4px solid var(--primary-color); text-align: left; padding: 15px; margin: 20px 0; font-size: 14px; color: #444; border-radius: 4px; }
+      .rgpd-box strong { color: var(--primary-color); display: block; margin-bottom: 5px; }
+
+      #status { margin-top: 20px; font-weight: bold; min-height: 20px; }
+      
+      /* Loader utilisant la couleur d'accent */
+      .loader { display:none; border: 4px solid #f3f3f3; border-top: 4px solid var(--accent-color); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <img src="https://via.placeholder.com/200x60?text=LOGO+ENTREPRISE" alt="Logo Organisation">
+      
+      <h1>Audit de sécurité Drive</h1>
+      <p>Sélectionnez le type d'analyse à effectuer.</p>
+      
+      <div class="rgpd-box">
+        <strong>🔒 Confidentialité & RGPD</strong>
+        Cet outil scanne vos fichiers pour identifier les partages publics.<br>
+      </div>
+
+      <div class="btn-group">
+        <button id="btn-scan-me" class="btn" onclick="lancerAction('me')">Scanner Mon Drive</button>
+        <button id="btn-scan-shared" class="btn-outline" onclick="lancerAction('shared')">Scanner les Drives Partagés</button>
+      </div>
+      
+      <div id="loader" class="loader"></div>
+      <div id="status"></div>
+    </div>
+
+    <script>
+      /**
+       * Gère le clic sur les boutons d'action et l'appel asynchrone au serveur GAS.
+       * @param {string} type - 'me' pour le drive perso, 'shared' pour les drives partagés.
+       */
+      const lancerAction = (type) => {
+        const btnMe = document.getElementById('btn-scan-me');
+        const btnShared = document.getElementById('btn-scan-shared');
+        const status = document.getElementById('status');
+        const loader = document.getElementById('loader');
+        
+        // Verrouillage Interface
+        btnMe.disabled = true;
+        btnShared.disabled = true;
+        loader.style.display = "block";
+        status.style.color = "#333";
+        status.innerText = type === 'me' ? "Analyse de votre espace en cours..." : "Analyse des drives partagés en cours (cela peut prendre du temps)...";
+
+        // Choix de la fonction serveur (nom exact dans Code.gs)
+        const fonctionServeur = type === 'me' ? 'lancerScanDrive' : 'lancerScanSharedDrives';
+
+        google.script.run
+          .withSuccessHandler((msg) => {
+            console.log(`Succès : ${msg}`);
+            loader.style.display = "none";
+            // Réutilisation de la couleur primaire (hardcodée ici pour simplicité JS)
+            status.style.color = "#045973"; 
+            status.innerText = msg;
+            btnMe.disabled = false;
+            btnShared.disabled = false;
+          })
+          .withFailureHandler((err) => {
+            console.error(`Erreur : ${err.message}`);
+            loader.style.display = "none";
+            status.style.color = "red";
+            status.innerText = `Erreur : ${err.message}`;
+            btnMe.disabled = false;
+            btnShared.disabled = false;
+          })
+          [fonctionServeur](); // Appel dynamique de la fonction
+      };
+    </script>
+  </body>
+</html>
